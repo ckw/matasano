@@ -16,7 +16,7 @@ toB64 :: BL.ByteString -> BL.ByteString
 toB64 = B64.encode
 
 asciiToHex :: BL.ByteString -> BL.ByteString
-asciiToHex bs = BL.pack $ asciiToHex' (BL.unpack bs)
+asciiToHex = BL.pack . asciiToHex' . BL.unpack
   where asciiToHex' :: [Word8] -> [Word8]
         asciiToHex' [] = []
         asciiToHex' [x] = [shiftL x 4]
@@ -51,7 +51,7 @@ asciiToHex bs = BL.pack $ asciiToHex' (BL.unpack bs)
             c -> error $ "invalid hex character: " ++ (show . chr . fromIntegral $ c)
 
 hexToAscii :: BL.ByteString -> BL.ByteString
-hexToAscii bs = BL.pack $ hexToAscii' (BL.unpack bs)
+hexToAscii = BL.pack . hexToAscii' . BL.unpack
   where hexToAscii' :: [Word8] -> [Word8]
         hexToAscii' [] = []
         hexToAscii' (x:xs) = let h1 = shiftR (x .&. 0xf0) 4
