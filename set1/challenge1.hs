@@ -1,5 +1,5 @@
 import qualified Data.ByteString.Lazy as BL
-import           Crypto.Common (toB64, toHex)
+import           Crypto.Common (toB64, asciiToHex)
 
 main :: IO ()
-main = BL.getContents >>= BL.putStr . toB64 . toHex
+main = BL.getContents >>= BL.putStr . toB64 . asciiToHex
