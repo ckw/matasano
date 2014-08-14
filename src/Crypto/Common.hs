@@ -3,14 +3,17 @@ module Crypto.Common
 , lbsXOR
 , asciiToHex
 , toB64
+, genCandidates
 )
 where
 
 import           Data.Bits ((.|.), (.&.), shiftL, shiftR, xor)
 import qualified Data.ByteString.Base64.Lazy as B64 (encode)
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy.Char8 as BL8 (pack, unpack)
+import           Data.Char (ord, chr)
+import qualified Data.Map.Strict as M
 import           Data.Word
-import           Data.Char (chr)
 
 toB64 :: BL.ByteString -> BL.ByteString
 toB64 = B64.encode
@@ -83,3 +86,70 @@ lbsXOR :: BL.ByteString -> BL.ByteString -> BL.ByteString
 lbsXOR bs1 bs2 = let ws1 = BL.unpack bs1
                      ws2 = BL.unpack bs2
                  in BL.pack $ zipWith xor ws1 ws2
+
+
+genCandidates :: BL.ByteString -> [((Char, BL.ByteString), Double)]
+genCandidates lbs = fmap distToEnglish . charStringPairs $ asciiToHex lbs
+  where charStringPairs s = fmap (xorAndConvertToString s) singleCharStrings
+        xorAndConvertToString lbs2 (c, lbs1) = (c, BL8.unpack $ lbsXOR lbs1 lbs2)
+        distToEnglish (c, l) = ((c, BL8.pack l), totalDistance l)
+        singleCharStrings = let f c = (chr c, BL8.pack . repeat . chr $ c)
+                            in fmap f [0..127]
+
+--TODO this algorithm shouldn't work as well as it does. Find another one.
+totalDistance :: [Char] -> Double
+totalDistance str = let len = fromIntegral $ length str
+                        counts = countChars str
+                        percentages = M.map (/ len) counts
+                    in sum . M.elems $ M.mapWithKey distFromCanonical percentages
+  where distFromCanonical k v = case M.lookup k frequenciesCanonical of
+                                    Nothing -> v
+                                    Just d -> abs (v - d)
+
+countChars :: [Char] -> M.Map Char Double
+countChars str = let charCounts = foldr incr M.empty (fmap toLower str)
+              in  M.union charCounts frequenciesCanonical
+  where incr c m = let c' = collapseNonAlpha c
+                   in case M.lookup c m of
+                        Nothing -> M.insert c' 1 m
+                        Just i -> M.insert c' (i + 1) m
+
+
+frequenciesCanonical :: M.Map Char Double
+frequenciesCanonical = M.fromList [ ('a', 0.08167)
+                                  , ('b', 0.01492)
+                                  , ('c', 0.02782)
+                                  , ('d', 0.04253)
+                                  , ('e', 0.13000)
+                                  , ('f', 0.02228)
+                                  , ('g', 0.02015)
+                                  , ('h', 0.06094)
+                                  , ('i', 0.06966)
+                                  , ('j', 0.00153)
+                                  , ('k', 0.00772)
+                                  , ('l', 0.04025)
+                                  , ('m', 0.02406)
+                                  , ('n', 0.06749)
+                                  , ('o', 0.07507)
+                                  , ('p', 0.01929)
+                                  , ('q', 0.00095)
+                                  , ('r', 0.05987)
+                                  , ('s', 0.06327)
+                                  , ('t', 0.09056)
+                                  , ('u', 0.02758)
+                                  , ('v', 0.00978)
+                                  , ('w', 0.02360)
+                                  , ('x', 0.00150)
+                                  , ('y', 0.01974)
+                                  , ('z', 0.00074)
+                                  , (' ', 0.14000)
+                                  -- catchall for digits, punctuation, etc.
+                                  , ('P', 0.07000)
+                                  ]
+
+toLower :: Char -> Char
+toLower c = if ord c < 0x5b && ord c > 0x40 then chr (ord c + 0x20) else c
+
+-- convert printable, non-lowercase alphabetic characters to 'P'
+collapseNonAlpha :: Char -> Char
+collapseNonAlpha c = if ord c < 0x7b && ord c > 0x60 || ord c < 0x21 then c else 'P'
