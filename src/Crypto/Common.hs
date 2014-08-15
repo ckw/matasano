@@ -114,7 +114,7 @@ countChars str = let charCounts = foldr incr M.empty (fmap toLower str)
                         Nothing -> M.insert c' 1 m
                         Just i -> M.insert c' (i + 1) m
 
-
+-- from http://en.wikipedia.org/wiki/Letter_frequency
 frequenciesCanonical :: M.Map Char Double
 frequenciesCanonical = M.fromList [ ('a', 0.08167)
                                   , ('b', 0.01492)
