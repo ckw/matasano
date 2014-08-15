@@ -108,7 +108,7 @@ totalDistance str = let len = fromIntegral $ length str
 
 countChars :: [Char] -> M.Map Char Double
 countChars str = let charCounts = foldr incr M.empty (fmap toLower str)
-              in  M.union charCounts frequenciesCanonical
+                 in  M.union charCounts frequenciesCanonical
   where incr c m = let c' = collapseNonAlpha c
                    in case M.lookup c m of
                         Nothing -> M.insert c' 1 m
