@@ -1,9 +1,11 @@
 module Crypto.Common
 ( hexToAscii
+, hexToAscii'
 , lbsXOR
 , asciiToHex
 , toB64
 , genCandidates
+, w8sXOR
 )
 where
 
