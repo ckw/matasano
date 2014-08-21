@@ -73,6 +73,19 @@ executable set1ch5
                , bytestring == 0.10.4.0
                , base64-bytestring == 1.0.0.1
                , containers
-               , unix == 2.5.1.0
+  hs-source-dirs: set1, src
+  default-language:    Haskell2010
+
+
+executable set1ch6
+  main-is: challenge6.hs
+  ghc-options: -Wall -O2
+  -- other-modules:
+  -- other-extensions:
+  build-depends: base >=4.5 && <4.6
+               , bytestring == 0.10.4.0
+               , base64-bytestring == 1.0.0.1
+               , containers
+               , dlist == 0.6.0.1
   hs-source-dirs: set1, src
   default-language:    Haskell2010

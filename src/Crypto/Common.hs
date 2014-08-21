@@ -1,20 +1,31 @@
 module Crypto.Common
-( hexToAscii
+( asciiToHex
+, asciiToHex'
+, bestByte
+, fromB64
+, fromB64L
+, genCandidates
+, hammingDistance
+, hammingDistance'
+, hexToAscii
 , hexToAscii'
 , lbsXOR
-, asciiToHex
+, rankKeySizes
 , toB64
-, genCandidates
+, totalDistance
 , w8sXOR
 )
 where
 
-import           Data.Bits ((.|.), (.&.), shiftL, shiftR, xor)
-import qualified Data.ByteString.Base64.Lazy as B64 (encode)
+import           Data.Bits ((.|.), (.&.), shiftL, shiftR, testBit, xor)
+import           Control.Applicative ((<$>))
+import           Control.Arrow (first, second)
+import qualified Data.ByteString.Base64.Lazy as B64 (decode,decodeLenient, encode)
 import qualified Data.ByteString.Lazy as BL
 import           Data.Char (ord, chr)
-import           Control.Arrow (first, second)
-import           Control.Applicative ((<$>))
+import           Data.Function (on)
+import           Data.List (sortBy)
+import           Data.Ord (comparing)
 import           Debug.Trace
 import qualified Data.Map.Strict as M
 import           Data.Word
@@ -25,6 +36,12 @@ _p str a = trace (str ++ show a) a
 
 toB64 :: BL.ByteString -> BL.ByteString
 toB64 = B64.encode
+
+fromB64 :: BL.ByteString -> BL.ByteString
+fromB64 = either (error . ("error: " ++)) id . B64.decode
+
+fromB64L :: BL.ByteString -> BL.ByteString
+fromB64L = B64.decodeLenient
 
 asciiToHex :: BL.ByteString -> BL.ByteString
 asciiToHex = BL.pack . asciiToHex' . BL.unpack
@@ -105,6 +122,24 @@ w8sXOR :: [Word8] -> [Word8] -> [Word8]
 w8sXOR w8s1 w8s2 = zipWith xor w8s1 w8s2
 
 
+hammingDistance :: BL.ByteString -> BL.ByteString -> Int
+hammingDistance lbs1 lbs2 = hammingDistance' (BL.unpack lbs1) (BL.unpack lbs2)
+
+hammingDistance' :: [Word8] -> [Word8] -> Int
+hammingDistance' ws1 ws2 = sum $ zipWith hd ws1 ws2
+  where hd b1 b2 = let diff = b1 `xor` b2
+                   in length . filter id . fmap (\n -> testBit diff n) $ [0..7]
+
+rankKeySizes :: [Word8] -> Int -> Int -> [(Int, Double)]
+rankKeySizes ws from to = sortBy (compare `on` snd) $ fmap (hd ws) [from..to]
+  where hd w8s n = let (c1, r1) = splitAt n w8s
+                       (c2, r2) = splitAt n r1
+                       (c3, r3) = splitAt n r2
+                       (c4, _)  = splitAt n r3
+                       dist = hammingDistance' c1 c2 + hammingDistance' c3 c4
+                   in (n, fromIntegral dist / fromIntegral (2 * n))
+
+
 genCandidates :: BL.ByteString -> [((Char, BL.ByteString), Double)]
 genCandidates lbs =
     let hex = asciiToHex' . BL.unpack $ lbs
@@ -112,6 +147,10 @@ genCandidates lbs =
   where rank = second totalDistance
         label (w, l) = ((chr $ fromIntegral w, BL.pack l), l)
 
+bestByte :: [Word8] -> Word8
+bestByte ws = top $ rank <$> [(w, w8sXOR ws $ repeat w) | w <- [0..127]]
+  where rank = second totalDistance
+        top = fst . head . sortBy (comparing snd)
 
 totalDistance :: [Word8] -> Double
 totalDistance str =
