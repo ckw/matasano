@@ -40,10 +40,11 @@ example:
 main :: IO ()
 main = do (opts, _) <- join $ parseOpts <$> getArgs
           when (help opts) $ putStrLn (usageInfo "Usage: " options) >> exitSuccess
-          stdin <- BL.filter (/= 0x0a) <$> BL.getContents
-          let decodeF = case encoding opts of
-                            Base64 -> fromB64
-                            Hex -> asciiToHex
+          stdin <- BL.getContents
+          let remNewLines = BL.filter (/= 0x0a)
+              decodeF = case encoding opts of
+                            Base64 -> fromB64 . remNewLines
+                            Hex -> asciiToHex . remNewLines
                             Raw -> id
               decoded = BL.unpack . decodeF $ stdin
               guesses = guessKey decoded (minKey opts) (maxKey opts)
