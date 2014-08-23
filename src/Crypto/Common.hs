@@ -128,7 +128,7 @@ hammingDistance lbs1 lbs2 = hammingDistance' (BL.unpack lbs1) (BL.unpack lbs2)
 hammingDistance' :: [Word8] -> [Word8] -> Int
 hammingDistance' ws1 ws2 = sum $ zipWith hd ws1 ws2
   where hd b1 b2 = let diff = b1 `xor` b2
-                   in length . filter id . fmap (\n -> testBit diff n) $ [0..7]
+                   in length . filter id . fmap (testBit diff) $ [0..7]
 
 rankKeySizes :: [Word8] -> Int -> Int -> [(Int, Double)]
 rankKeySizes ws from to = sortBy (compare `on` snd) $ fmap (hd ws) [from..to]
