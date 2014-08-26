@@ -10,6 +10,7 @@ module Crypto.Common
 , hexToAscii
 , hexToAscii'
 , lbsXOR
+, padBlock
 , rankKeySizes
 , toB64
 , totalDistance
@@ -163,6 +164,11 @@ totalDistance str =
                             Nothing -> v
                             Just d -> abs (v - d)
 
+
+
+padBlock :: Int -> [Word8] -> [Word8]
+padBlock sz ws = let diff = sz - length ws
+                 in ws ++ replicate (fromIntegral diff) (fromIntegral diff)
 
 countChars :: [Word8] -> M.Map Word8 Int
 countChars str = foldr incr M.empty (toLower <$> str)
