@@ -11,6 +11,7 @@ module Crypto.Common
 , hexToAscii'
 , lbsXOR
 , padBlock
+, piecesOfN
 , rankKeySizes
 , toB64
 , totalDistance
@@ -24,6 +25,7 @@ import           Control.Arrow (first, second)
 import qualified Data.ByteString.Base64.Lazy as B64 (decode,decodeLenient, encode)
 import qualified Data.ByteString.Lazy as BL
 import           Data.Char (ord, chr)
+import qualified Data.DList as D
 import           Data.Function (on)
 import           Data.List (sortBy)
 import           Data.Ord (comparing)
@@ -165,10 +167,21 @@ totalDistance str =
                             Just d -> abs (v - d)
 
 
+piecesOfN :: Int -> [a] -> [[a]]
+piecesOfN n xs = D.toList $ piecesOfN' n xs D.empty
+
+
+piecesOfN' :: Int -> [a] -> D.DList [a] -> D.DList [a]
+piecesOfN' n xs acc = let (start, rest) = splitAt n xs
+                      in if null rest
+                         then D.snoc acc start
+                         else piecesOfN' n rest (D.snoc acc start)
+
 
 padBlock :: Int -> [Word8] -> [Word8]
 padBlock sz ws = let diff = sz - length ws
                  in ws ++ replicate (fromIntegral diff) (fromIntegral diff)
+
 
 countChars :: [Word8] -> M.Map Word8 Int
 countChars str = foldr incr M.empty (toLower <$> str)

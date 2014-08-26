@@ -1,9 +1,9 @@
 import           Crypto.Common ( asciiToHex'
                                , hammingDistance'
                                , hexToAscii'
+                               , piecesOfN
                                )
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.DList as D
 import           Data.List (sortBy)
 import           Data.Function (on)
 import           Data.Word
@@ -32,13 +32,3 @@ hammingDistances wss = do let blocks = zip [(0 :: Integer)..] (piecesOfN 16 wss)
                           b <- blocks
                           guard (fst a < fst b)
                           return $ hammingDistance' (snd a) (snd b)
-
-
-piecesOfN :: Int -> [a] -> [[a]]
-piecesOfN n xs = D.toList $ piecesOfN' n xs D.empty
-
-piecesOfN' :: Int -> [a] -> D.DList [a] -> D.DList [a]
-piecesOfN' n xs acc = let (start, rest) = splitAt n xs
-                      in if null rest
-                         then D.snoc acc start
-                         else piecesOfN' n rest (D.snoc acc start)
