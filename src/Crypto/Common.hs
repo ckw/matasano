@@ -4,6 +4,7 @@ module Crypto.Common
 , bestByte
 , fromB64
 , fromB64L
+, fromB64S
 , genCandidates
 , hammingDistance
 , hammingDistance'
@@ -14,6 +15,7 @@ module Crypto.Common
 , piecesOfN
 , rankKeySizes
 , toB64
+, toB64S
 , totalDistance
 , w8sXOR
 )
@@ -23,7 +25,9 @@ import           Data.Bits ((.|.), (.&.), shiftL, shiftR, testBit, xor)
 import           Control.Applicative ((<$>))
 import           Control.Arrow (first, second)
 import qualified Data.ByteString.Base64.Lazy as B64 (decode,decodeLenient, encode)
+import qualified Data.ByteString.Base64 as B64S (decode, encode)
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString as BS
 import           Data.Char (ord, chr)
 import qualified Data.DList as D
 import           Data.Function (on)
@@ -40,8 +44,14 @@ _p str a = trace (str ++ show a) a
 toB64 :: BL.ByteString -> BL.ByteString
 toB64 = B64.encode
 
+toB64S :: BS.ByteString -> BS.ByteString
+toB64S = B64S.encode
+
 fromB64 :: BL.ByteString -> BL.ByteString
 fromB64 = either (error . ("error: " ++)) id . B64.decode
+
+fromB64S :: BS.ByteString -> BS.ByteString
+fromB64S = either (error . ("error: " ++)) id . B64S.decode
 
 fromB64L :: BL.ByteString -> BL.ByteString
 fromB64L = B64.decodeLenient
