@@ -203,7 +203,7 @@ piecesOfN' n xs acc = let (start, rest) = splitAt n xs
 
 
 padBlock :: Int -> [Word8] -> [Word8]
-padBlock sz ws = let diff = sz - length ws
+padBlock sz ws = let diff = sz - (length ws `mod` sz)
                  in ws ++ replicate (fromIntegral diff) (fromIntegral diff)
 
 
