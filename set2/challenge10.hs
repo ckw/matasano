@@ -1,13 +1,11 @@
 {-#LANGUAGE DeriveDataTypeable #-}
 
 import           Crypto.Common ( asciiToHex
+                               , decryptCBC
+                               , encryptCBC
                                , fromB64
-                               , padBlock
-                               , piecesOfN
                                , toB64S
-                               , w8sXOR
                                )
-import qualified Crypto.Cipher.AES as AES
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Char8 as BS8
 import qualified Data.ByteString as BS
@@ -16,7 +14,6 @@ import           Control.Exception
 import           Control.Monad (join, when)
 import           Data.Char (toLower)
 import           Data.Typeable
-import           Data.Word
 import           System.Console.GetOpt
 import           System.Exit (exitSuccess)
 import           System.Environment (getArgs)
@@ -52,31 +49,6 @@ main = do (opts, nonOpts) <- join $ parseOpts <$> getArgs
           then BS8.putStrLn . BS.pack $ decryptCBC defaultIV key decoded
           else BS8.putStrLn . toB64S . BS.pack $ encryptCBC defaultIV key decoded
   where toStrict = BS.concat . BL.toChunks
-
-
-decryptCBC :: [Word8] -> [Word8] -> [Word8] -> [Word8]
-decryptCBC iv key ct = concat $ decB blocks iv
-  where keySize = length key
-        blocks = piecesOfN keySize ct
-        aes = AES.initAES $ BS.pack key
-        decB [] _ = []
-        decB [ws] iv' = let d = BS.unpack $ AES.decryptECB aes (BS.pack ws)
-                        in [w8sXOR iv' d]
-        decB (ws:wss) iv' = let d = BS.unpack $ AES.decryptECB aes (BS.pack ws)
-                            in (w8sXOR d iv') : (decB wss ws)
-
-
-encryptCBC :: [Word8] -> [Word8] -> [Word8] -> [Word8]
-encryptCBC iv key ct = concat $ encB blocks iv
-  where keySize = length key
-        blocks = piecesOfN keySize ct
-        aes = AES.initAES $ BS.pack key
-        encB [] _ = []
-        encB [ws] iv' = let p = w8sXOR iv' $ padBlock keySize ws
-                        in [BS.unpack $ AES.encryptECB aes (BS.pack p)]
-        encB (ws:wss) iv' = let d = w8sXOR ws iv'
-                                e = BS.unpack $ AES.encryptECB aes (BS.pack d)
-                            in e : (encB wss e)
 
 
 options :: [OptDescr (Options -> Options)]

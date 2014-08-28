@@ -2,6 +2,8 @@ module Crypto.Common
 ( asciiToHex
 , asciiToHex'
 , bestByte
+, decryptCBC
+, encryptCBC
 , fromB64
 , fromB64L
 , fromB64S
@@ -26,6 +28,7 @@ import           Data.Bits ((.|.), (.&.), shiftL, shiftR, testBit, xor)
 import           Control.Applicative ((<$>))
 import           Control.Arrow (first, second)
 import           Control.Monad (guard)
+import qualified Crypto.Cipher.AES as AES
 import qualified Data.ByteString.Base64.Lazy as B64 (decode,decodeLenient, encode)
 import qualified Data.ByteString.Base64 as B64S (decode, encode)
 import qualified Data.ByteString.Lazy as BL
@@ -202,6 +205,31 @@ piecesOfN' n xs acc = let (start, rest) = splitAt n xs
 padBlock :: Int -> [Word8] -> [Word8]
 padBlock sz ws = let diff = sz - length ws
                  in ws ++ replicate (fromIntegral diff) (fromIntegral diff)
+
+
+decryptCBC :: [Word8] -> [Word8] -> [Word8] -> [Word8]
+decryptCBC iv key ct = concat $ decB blocks iv
+  where keySize = length key
+        blocks = piecesOfN keySize ct
+        aes = AES.initAES $ BS.pack key
+        decB [] _ = []
+        decB [ws] iv' = let d = BS.unpack $ AES.decryptECB aes (BS.pack ws)
+                        in [w8sXOR iv' d]
+        decB (ws:wss) iv' = let d = BS.unpack $ AES.decryptECB aes (BS.pack ws)
+                            in (w8sXOR d iv') : (decB wss ws)
+
+
+encryptCBC :: [Word8] -> [Word8] -> [Word8] -> [Word8]
+encryptCBC iv key pt = concat $ encB blocks iv
+  where keySize = length key
+        blocks = piecesOfN keySize pt
+        aes = AES.initAES $ BS.pack key
+        encB [] _ = []
+        encB [ws] iv' = let p = w8sXOR iv' $ padBlock keySize ws
+                        in [BS.unpack $ AES.encryptECB aes (BS.pack p)]
+        encB (ws:wss) iv' = let d = w8sXOR ws iv'
+                                e = BS.unpack $ AES.encryptECB aes (BS.pack d)
+                            in e : (encB wss e)
 
 
 countChars :: [Word8] -> M.Map Word8 Int
