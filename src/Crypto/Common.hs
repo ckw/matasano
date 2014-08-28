@@ -8,6 +8,7 @@ module Crypto.Common
 , genCandidates
 , hammingDistance
 , hammingDistance'
+, hammingDistances
 , hexToAscii
 , hexToAscii'
 , lbsXOR
@@ -24,6 +25,7 @@ where
 import           Data.Bits ((.|.), (.&.), shiftL, shiftR, testBit, xor)
 import           Control.Applicative ((<$>))
 import           Control.Arrow (first, second)
+import           Control.Monad (guard)
 import qualified Data.ByteString.Base64.Lazy as B64 (decode,decodeLenient, encode)
 import qualified Data.ByteString.Base64 as B64S (decode, encode)
 import qualified Data.ByteString.Lazy as BL
@@ -142,6 +144,15 @@ hammingDistance' :: [Word8] -> [Word8] -> Int
 hammingDistance' ws1 ws2 = sum $ zipWith hd ws1 ws2
   where hd b1 b2 = let diff = b1 `xor` b2
                    in length . filter id . fmap (testBit diff) $ [0..7]
+
+
+hammingDistances :: [Word8] -> [Int]
+hammingDistances wss = do let blocks = zip [(0 :: Integer)..] (piecesOfN 16 wss)
+                          a <- blocks
+                          b <- blocks
+                          guard (fst a < fst b)
+                          return $ hammingDistance' (snd a) (snd b)
+
 
 rankKeySizes :: [Word8] -> Int -> Int -> [(Int, Double)]
 rankKeySizes ws from to = sortBy (compare `on` snd) $ fmap (hd ws) [from..to]
