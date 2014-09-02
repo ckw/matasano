@@ -5,6 +5,10 @@ import           Crypto.Common ( asciiToHex
                                , encryptCBC
                                , hammingDistances
                                , padBlock
+                               , randAESKey
+                               , randBool
+                               , randBytes
+                               , rand5To10
                                )
 import qualified Crypto.Cipher.AES as AES
 import qualified Data.ByteString.Lazy as BL
@@ -51,18 +55,6 @@ main = do (opts, _) <- join $ parseOpts <$> getArgs
                   ++ " mode; detected as "
                   ++ (show aesModeGuess)
                   ++ " mode"
-
-randBytes :: StdGen -> Int -> [Word8]
-randBytes gen num = take num $ randomRs (0, 255) gen
-
-randAESKey :: StdGen -> [Word8]
-randAESKey gen = randBytes gen 16
-
-rand5To10 :: StdGen -> Int
-rand5To10 gen = fst $ randomR (5, 10) gen
-
-randBool :: StdGen -> Bool
-randBool = fst . random
 
 encryptionOracle :: StdGen -> [Word8] -> (AESMode, BS.ByteString)
 encryptionOracle gen0 plaintext =

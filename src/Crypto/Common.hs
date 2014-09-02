@@ -16,6 +16,10 @@ module Crypto.Common
 , lbsXOR
 , padBlock
 , piecesOfN
+, randAESKey
+, randBool
+, randBytes
+, rand5To10
 , rankKeySizes
 , toB64
 , toB64S
@@ -41,6 +45,7 @@ import           Data.Ord (comparing)
 import           Debug.Trace
 import qualified Data.Map.Strict as M
 import           Data.Word
+import           System.Random
 
 --for debugging only
 _p :: Show a => [Char] -> a -> a
@@ -206,6 +211,18 @@ padBlock :: Int -> [Word8] -> [Word8]
 padBlock sz ws = let diff = sz - (length ws `mod` sz)
                  in ws ++ replicate (fromIntegral diff) (fromIntegral diff)
 
+
+randBytes :: StdGen -> Int -> [Word8]
+randBytes gen num = take num $ randomRs (0, 255) gen
+
+randAESKey :: StdGen -> [Word8]
+randAESKey gen = randBytes gen 16
+
+rand5To10 :: StdGen -> Int
+rand5To10 gen = fst $ randomR (5, 10) gen
+
+randBool :: StdGen -> Bool
+randBool = fst . random
 
 decryptCBC :: [Word8] -> [Word8] -> [Word8] -> [Word8]
 decryptCBC iv key ct = concat $ decB blocks iv
